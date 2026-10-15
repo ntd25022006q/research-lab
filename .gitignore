@@ -1,2 +1,12 @@
 skills/
 node_modules/
+upload/
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.next/
+*.log
+.DS_Store
+Thumbs.db
