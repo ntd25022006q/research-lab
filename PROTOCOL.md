@@ -109,3 +109,22 @@ chưa ghi kết quả thì không rút kết luận; chưa checkpoint thì khôn
 - GitHub PAT chỉ nằm ở 2 chỗ: URL remote trong sandbox (sẽ chết theo sandbox — chấp nhận)
   và tin nhắn user. **CẤM** ghi PAT vào bất kỳ file nào trong repo.
 - Token nên là fine-grained, giới hạn đúng 1 repo này, quyền Contents: Read/Write.
+
+## 11. ENFORCEMENT — MACHINE CHECKS / CƠ CHÍ CỨNG: LUẬT DO MÁY GIÁM SÁT, KHÔNG PHẢI LỰA CẢM
+
+Luật trong file này được thực thi bởi 3 lớp máy móc — agent KHÔNG được tìm cách bypass:
+
+- **Lớp 1 — trong repo (sandbox):** `tools/gate.sh` tự chạy trong MỌI checkpoint và qua git
+  pre-commit hook (`core.hooksPath = tools/hooks`). Chặn cứng: secret (ghp_/github_pat_/AKIA/sk-/key),
+  `.env` bị track, file >50MB, XÓA tài liệu bắt buộc, worklog rỗng. Bị chặn → sửa, không qua mặt.
+- **Lớp 2 — trên GitHub (CI):** workflow `enforce` chạy trên MỌI push. Vi phạm = dấu ❌ đỏ
+  **vĩnh viễn trong lịch sử commit** — kể cả agent có cố giấu, user vẫn thấy. Lớp này nằm trên
+  server GitHub: **sandbox reset KHÔNG THỂ xóa được.**
+- **Lớp 3 — trên GitHub (bảo vệ nhánh):** nhánh `main` cấm force-push, cấm xóa → lịch sử
+  nghiên cứu là hồ sơ không thể viết lại.
+
+Sự thật kỹ thuật cần thừa nhận: không gì lưu được "vĩnh viễn bên trong sandbox" — mọi khóa
+trong sandbox đều chết theo reset. Do đó thiết kế đúng là: **lớp cứng đặt trên GitHub** (lớp 2+3),
+lớp trong repo (lớp 1) được **tự tái cài đặt** ngay lần checkpoint đầu sau mỗi lần restore
+(`checkpoint.sh` tự set `core.hooksPath`). Agent sau reset làm đúng Startup Sequence (mục 0)
+thì luật được nạp lại nguyên vẹn mà không cần ai nhắc.

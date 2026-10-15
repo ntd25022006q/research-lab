@@ -1,0 +1,46 @@
+name: enforce
+# LỚP 2: CI chặn vi phạm NGAY TRÊN GITHUB — sống sót mọi sandbox reset, không bypass được từ sandbox.
+# Vi phạm = dấu ❌ đỏ vĩnh viễn trong lịch sử commit, user nhìn thấy ngay.
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  enforce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mandatory files must exist (anti-rule-deletion)
+        run: |
+          for f in PROTOCOL.md CONTEXT_SNAPSHOT.md RESTORE.md worklog.md tools/checkpoint.sh tools/db_backup.sh; do
+            [ -f "$f" ] || { echo "❌ MISSING: $f — rules deleted. NOT ALLOWED."; exit 1; }
+          done
+          echo "✅ all mandatory files present"
+
+      - name: .env must NOT be tracked
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "❌ .env is tracked"; exit 1
+          fi
+          echo "✅ .env not tracked"
+
+      - name: Secret scan (all tracked files)
+        run: |
+          PATS=('ghp_[A-Za-z0-9]{36}' 'github_pat_[A-Za-z0-9_]{22,}' 'AKIA[0-9A-Z]{16}' '\bsk-[A-Za-z0-9]{20,}' 'xox[baprs]-[A-Za-z0-9-]{10,}' '-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----')
+          FAIL=0
+          for p in "${PATS[@]}"; do
+            HITS=$(git grep -nIE "$p" -- . 2>/dev/null | head -5 || true)
+            if [ -n "$HITS" ]; then
+              echo "❌ SECRET PATTERN: $p"; echo "$HITS"; FAIL=1
+            fi
+          done
+          exit $FAIL
+
+      - name: No file over 50MB
+        run: |
+          BIG=$(git ls-files -z | xargs -0 -I{} du -m "{}" 2>/dev/null | awk '$1 > 50 {print $2}')
+          if [ -n "$BIG" ]; then echo "❌ oversized:"; echo "$BIG"; exit 1; fi
+          echo "✅ size ok"

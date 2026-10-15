@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# git pre-commit hook — gọi gate.sh. Được kích hoạt qua: git config core.hooksPath tools/hooks
+exec bash "$(dirname "$0")/../gate.sh"

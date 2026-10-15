@@ -8,6 +8,12 @@ cd "$(dirname "$0")/.."
 
 MSG="${1:-checkpoint: update worklog and artifacts $(date '+%Y-%m-%d %H:%M')}"
 
+# 0. Tự cài lại git hook (sống sót qua reset: lần checkpoint đầu sau restore tự kích hoạt lại)
+git config core.hooksPath tools/hooks
+
+# 0.5 LỚP 1 — GATE: chặn secret, .env, file >50MB, xóa luật. Bị chặn = phải sửa, KHÔNG được bypass.
+bash "$(dirname "$0")/gate.sh"
+
 # 1. Backup DB (nếu có) trước khi commit — DB luôn đi kèm checkpoint
 bash "$(dirname "$0")/db_backup.sh" || true
 

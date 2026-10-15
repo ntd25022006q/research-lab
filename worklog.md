@@ -14,6 +14,26 @@
 
 ---
 
+## [2026-10-16 20:45] Task ID: 2 — Nối GitHub + lắp 3 lớp khóa cứng (enforcement)
+
+- **Did / Đã làm:**
+  - Xác minh PAT user cung cấp (login `ntd25022006q`, token CLASSIC quyền admin toàn phần — đã cảnh báo user nên thay bằng fine-grained sau setup).
+  - Tạo repo private `ntd25022006q/research-lab` qua API, nối remote, push lần đầu thành công (nhánh `main`).
+  - **Lớp 1 (trong repo):** viết `tools/gate.sh` — chặn secret (ghp_/github_pat_/AKIA/sk-/private key), `.env` bị track, file >50MB, xóa tài liệu bắt buộc, worklog rỗng; tạo `tools/hooks/pre-commit`; `checkpoint.sh` giờ tự set `core.hooksPath` + chạy gate trước mọi push (tự tái cài sau reset).
+  - **Lớp 2 (GitHub):** tạo `.github/workflows/enforce.yml` — CI chạy trên mọi push: kiểm tra tài liệu bắt buộc tồn tại (chống xóa luật), quét secret, cấm file >50MB.
+  - **Lớp 3 (GitHub):** sẽ bật bảo vệ nhánh main (cấm force-push/xóa) qua API sau push này.
+  - Thêm Điều 11 ENFORCEMENT vào PROTOCOL.md ghi rõ cơ chế 3 lớp + sự thật kỹ thuật (khóa trong sandbox không thể vĩnh viễn — lớp cứng phải nằm trên GitHub, lớp trong repo tự tái cài).
+- **Why / Tại sao:**
+  - User yêu cầu "khóa cứng vào hệ thống, dù reset không bị xóa, chặn khi không làm đúng" — điều đó technically bất khả bên trong sandbox (mọi thứ trong sandbox chết theo reset), nên thiết kế đúng là đặt lớp cứng trên server GitHub (CI + branch protection — không bypass được từ sandbox), còn lớp trong repo tự tái cài đặt qua startup sequence.
+  - Pattern quét secret được viết dạng regex có yêu cầu hậu tố ≥22-36 ký tự để không tự khớp chính file quét (tránh false-positive làm CI đỏ oan).
+- **Findings / Phát hiện:**
+  - Push bootstrap `29fe386` lên GitHub OK; token classic hoạt động cho toàn bộ: tạo repo, push, (tiếp: protection + CI).
+  - Gate phải chạy SAU `git add -A` (quét index) và cả trước commit — thiết kế hiện tại: checkpoint gọi gate trực tiếp + pre-commit hook dự phòng.
+- **Next / Tiếp theo:**
+  1. Push enforcement commit → xác minh CI `enforce` xanh.
+  2. Bật branch protection (no force-push, no delete) qua API.
+  3. User chốt chủ đề NCKH → mở EXP-001.
+
 ## [2026-10-16 20:20] Task ID: 1 — Chẩn đoán môi trường + dựng khung phòng lab số (persistence infrastructure)
 
 - **Did / Đã làm:**

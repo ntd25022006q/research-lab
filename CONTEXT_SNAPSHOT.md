@@ -5,9 +5,9 @@
 
 ---
 
-- **Last updated / Cập nhật:** 2026-10-16
-- **Commit / Mã commit:** *(điền sau lần push đầu)*
-- **Phase / Giai đoạn:** 🟢 INFRASTRUCTURE — phòng lab số vừa được dựng, chưa có nghiên cứu cụ thể
+- **Last updated / Cập nhật:** 2026-10-16 20:45
+- **Commit / Mã commit:** `29fe386` (bootstrap) — enforcement commit xem `git log`
+- **Phase / Giai đoạn:** 🟢 INFRASTRUCTURE COMPLETE — repo đã nối GitHub + 3 lớp khóa cứng hoạt động
 
 ## 1. MISSION / SỨC MỆNH
 
@@ -20,8 +20,10 @@
 - **Done / Đã xong:**
   - Dựng khung phòng lab: PROTOCOL.md, worklog.md, RESTORE.md, tools/ (checkpoint.sh, db_backup.sh), cây thư mục research/ + data/ + scripts/.
   - Chẩn đoán môi trường (2026-10-16): sandbox mới reset (uptime 56 phút), upload/ rỗng, DB là SQLite trong sandbox (`DATABASE_URL=file:...`), git có sẵn nhưng chưa có remote → xác nhận cơ chế mất dữ liệu user mô tả là đúng.
-- **In progress / Đang làm:** chờ user tạo repo GitHub + PAT để nối remote và push lần đầu.
-- **Blocked / Đang kẹt:** không thể push đến đâu cho đến khi có `username/repo + PAT` từ user.
+  - **Nối GitHub thành công:** repo `ntd25022006q/research-lab` (private), push main lần đầu.
+  - **Kích hoạt 3 lớp khóa cứng:** (1) `tools/gate.sh` + git pre-commit hook chặn secret/.env/file lớn/xóa luật; (2) CI `enforce` trên GitHub quét mọi push; (3) bảo vệ nhánh main cấm force-push. Chi tiết: PROTOCOL.md Điều 11.
+- **In progress / Đang làm:** chờ user chốt chủ đề nghiên cứu cụ thể (lĩnh vực AI/ML đã chọn).
+- **Blocked / Đang kẹt:** không có blocker nào.
 
 ## 3. KEY FINDINGS / PHÁT HIỆN QUAN TRỌNG (kèm bằng chứng)
 
@@ -45,17 +47,19 @@
 
 ## 5. NEXT STEPS / BƯỚC TIẾP THEO (theo thứ tự)
 
-1. **User:** tạo repo GitHub private + fine-grained PAT → gửi `username/repo` + PAT trong chat.
-2. **Agent:** `git remote add origin https://<PAT>@github.com/<user>/<repo>.git` → push lần đầu → ghi commit hash vào đây.
+1. ~~User tạo repo + PAT~~ ✅ xong — repo `ntd25022006q/research-lab`, remote đã nối, push đầu tiên OK.
+2. ~~Agent nối remote + push~~ ✅ xong.
 3. **User + Agent:** chốt chủ đề nghiên cứu cụ thể → điền mục 1 MISSION.
 4. **Agent:** mở `research/experiments/EXP-001-*.md` theo quy trình pre-register của PROTOCOL.md.
+5. **User (khuyến nghị):** sau khi setup ổn định, thu hồi PAT classic này + thay bằng fine-grained token (chỉ repo research-lab, Contents: R/W).
 
 ## 6. GOTCHAS / BẪY CẦN BIẾT (điều sẽ cắn agent kế nhiệm nếu bỏ qua)
 
-- **Sau reset, remote URL (chứa PAT) cũng mất** → agent mới phải xin PAT lại từ user; đừng tìm kiếm nó trong repo (cấm lưu PAT vào file).
+- **Sau reset, remote URL (chứa PAT) cũng mất** → agent mới phải xin PAT lại từ user; đừng tìm kiếm nó trong repo (gate + CI chặn cứng — pattern PAT trong file làm CI đỏ).
+- **PAT user đang dùng là CLASSIC quyền admin toàn phần** (`admin:org`, `delete_repo`...) — vượt needs; đã khuyến cáo user thu hồi + thay fine-grained sau khi setup ổn định. Nếu token cũ bị thu hồi mà user chưa đưa token mới: xin lại, đừng đoán.
 - `skills/`, `upload/`, `.env` bị gitignore cố ý — đừng "sửa" .gitignore để đưa chúng vào repo.
 - `download/` (nơi user tải file) KHÁC với `download-exports/` (trong repo). Deliverable cuối cần nằm ở cả hai: copy từ `download-exports/` → `download/`.
-- Nhánh mặc định trong sandbox là gì cần kiểm tra (`git branch`): nếu không phải `main` thì đổi trước khi push đầu tiên.
+- Nhánh mặc định là `main` (đã xác minh) — đừng tạo nhánh khác khi push thông thường.
 
 ## 7. RESTORE CHECKLIST / DANH SÁCH PHỤC HỒI
 
