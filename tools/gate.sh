@@ -6,7 +6,9 @@ cd "$(dirname "$0")/.."
 FAIL=0
 
 # ── 1. Tài liệu bắt buộc phải tồn tại (chống xóa luật) ──────────────────────
-for f in PROTOCOL.md CONTEXT_SNAPSHOT.md RESTORE.md worklog.md tools/checkpoint.sh tools/db_backup.sh; do
+for f in PROTOCOL.md CONTEXT_SNAPSHOT.md RESTORE.md worklog.md \
+         tools/checkpoint.sh tools/db_backup.sh tools/gate.sh tools/ci_status.sh \
+         .github/workflows/enforce.yml .github/workflows/quality.yml; do
   [ -f "$f" ] || { echo "[gate] ❌ THIẾU file bắt buộc: $f — LUẬT KHÔNG ĐƯỢC XÓA"; FAIL=1; }
 done
 

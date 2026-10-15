@@ -1,0 +1,57 @@
+name: quality
+# MÔI TRƯỜNG THỨ 2: mọi push được chấm bài độc lập trên runner sạch của GitHub.
+# Agent trong sandbox KHÔNG THỂ can thiệp kết quả này — đây là "đồng nghiệp không thể mua chuộc".
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint (ruff + shellcheck + actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python lint
+        run: |
+          pip install -q ruff
+          ruff check .
+      - name: Bash lint (shellcheck)
+        run: |
+          shellcheck -S error tools/*.sh tools/hooks/pre-commit
+      - name: Workflow lint (actionlint)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash
+          ./actionlint -shellcheck= -color
+
+  test:
+    name: self-tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test deps
+        run: pip install -q pytest pyyaml
+      - name: Run infrastructure self-tests
+        run: pytest -v --tb=short
+
+  security:
+    name: security (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python security scan
+        run: |
+          pip install -q bandit
+          # -ll: chỉ fail ở mức MEDIUM trở lên (LOW là nhiễu trong test harness)
+          find . -name '*.py' -not -path './skills/*' -not -path './node_modules/*' -print0 \
+            | xargs -0 -r bandit -q -ll -v

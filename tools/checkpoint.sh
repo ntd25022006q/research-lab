@@ -31,6 +31,8 @@ fi
 if git remote get-url origin >/dev/null 2>&1; then
   BRANCH="$(git rev-parse --abbrev-ref HEAD)"
   git push -u origin "$BRANCH" && echo "[checkpoint] Đã push lên origin/$BRANCH ✅"
+  echo "[checkpoint] ⚠️ BƯỚC BẮT BUỘC TIẾP THEO (PROTOCOL §12): bash tools/ci_status.sh --wait"
+  echo "[checkpoint]    Local pass ≠ done — milestone chỉ DONE khi môi trường thứ 2 (CI) xanh."
 else
   echo "[checkpoint] ⚠️  Chưa có remote origin — chỉ commit cục bộ (sẽ mất khi reset!)."
   echo "            Nối remote: git remote add origin https://<PAT>@github.com/<user>/<repo>.git"

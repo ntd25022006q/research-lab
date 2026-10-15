@@ -120,11 +120,26 @@ Luật trong file này được thực thi bởi 3 lớp máy móc — agent KH�
 - **Lớp 2 — trên GitHub (CI):** workflow `enforce` chạy trên MỌI push. Vi phạm = dấu ❌ đỏ
   **vĩnh viễn trong lịch sử commit** — kể cả agent có cố giấu, user vẫn thấy. Lớp này nằm trên
   server GitHub: **sandbox reset KHÔNG THỂ xóa được.**
-- **Lớp 3 — trên GitHub (bảo vệ nhánh):** nhánh `main` cấm force-push, cấm xóa → lịch sử
-  nghiên cứu là hồ sơ không thể viết lại.
+- **Lớp 3 — trên GitHub (bảo vệ nhánh):** nhánh `main` ĐÃ ĐƯỢC KHÓA (cấm force-push, cấm xóa —
+  khả dụng từ khi repo chuyển public) → lịch sử nghiên cứu là hồ sơ không thể viết lại.
 
 Sự thật kỹ thuật cần thừa nhận: không gì lưu được "vĩnh viễn bên trong sandbox" — mọi khóa
 trong sandbox đều chết theo reset. Do đó thiết kế đúng là: **lớp cứng đặt trên GitHub** (lớp 2+3),
 lớp trong repo (lớp 1) được **tự tái cài đặt** ngay lần checkpoint đầu sau mỗi lần restore
 (`checkpoint.sh` tự set `core.hooksPath`). Agent sau reset làm đúng Startup Sequence (mục 0)
 thì luật được nạp lại nguyên vẹn mà không cần ai nhắc.
+
+## 12. DUAL-ENVIRONMENT & CI-FIRST / KỶ LUẬT MÔI TRƯỜNG KÉP & CI-TRƯỚC
+
+- **Sandbox = bàn làm việc**: nhanh, tiện, tạm bợ — có thể chết bất kỳ lúc nào.
+- **GitHub = phòng giám định**: sạch, độc lập, vĩnh viễn — chạy lại toàn bộ kiểm tra
+  (ruff + shellcheck + actionlint + pytest + bandit + protocol enforcement) trên MỌI push,
+  trên máy agent KHÔNG THỂ can thiệp. Đây là "đồng nghiệp thứ hai không thể mua chuộc".
+- **Nguyên tắc vàng: LOCAL PASS ≠ DONE.** Một milestone chỉ DONE khi CI xanh cho commit đó:
+  sau MỌI push, chạy `bash tools/ci_status.sh --wait` và đọc phán quyết.
+- **CI đỏ = DỪNG MỌI VIỆC**: sửa lỗi, push lại, chờ xanh rồi mới làm việc mới.
+  CẤM tiếp tục công việc mới trên nền CI đỏ (nợ kỹ thuật tích lũy = nghiên cứu không tin được).
+- **CẤM bypass kiểm tra**: `--no-verify`, force-push, sửa/tắt workflow để né check.
+  Nếu một check bị cho là sai → chứng minh bằng dữ liệu trong worklog/issue, không phá kiểm tra.
+- **Code phải đạt chuẩn chuyên gia**: mọi script/thí nghiệm qua lint sạch, có test cho logic
+  quan trọng, tái lập được (seed + phiên bản). Làm ẩu = vi phạm protocol, không phải "phong cách".

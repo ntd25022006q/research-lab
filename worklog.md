@@ -34,6 +34,26 @@
   2. Bật branch protection (no force-push, no delete) qua API.
   3. User chốt chủ đề NCKH → mở EXP-001.
 
+## [2026-10-16 21:30] Task ID: 4 — Môi trường kép: bộ kiểm thử chuyên gia + CI 4 job + chuyển public
+
+- **Did / Đã làm:**
+  - **Chuyển repo sang PUBLIC** (API PATCH) + **bật branch protection THÀNH CÔNG** (cấm force-push/xóa — giờ free trên public) → Layer 3 chính thức cứng.
+  - **Bộ kiểm thử tự phản chiếu** `tests/test_infra.py` (14 test): chứng minh gate chặn secret/file lớn/thiếu file, checkpoint không bị bypass, db_backup dump đúng schema+data, worklog/PROTOCOL không bị cắt xén, workflow YAML hợp lệ, script bash chuẩn cú pháp.
+  - **Workflow `quality.yml`** 3 job mới song song: lint (ruff + shellcheck + actionlint), self-tests (pytest), security (bandit -ll) — bổ sung cho enforce.yml → mỗi push được chấm bởi 4 job độc lập trên runner sạch.
+  - **`tools/ci_status.sh`**: agent BẮT BUỘC kiểm tra phán quyết CI sau mỗi push (--wait tối đa 5 phút); exit code 0/1/2 rõ ràng.
+  - **PROTOCOL thêm Điều 12 (DUAL-ENVIRONMENT & CI-FIRST)**: local pass ≠ done; CI đỏ = dừng mọi việc; cấm --no-verify/force-push/tắt workflow; làm ẩu = vi phạm protocol.
+  - Viết lại phần parse `.env` trong db_backup.sh (heredoc python thay thế chuỗi tr/inti lồng — sạch cho shellcheck); xóa `minimal-test.yml` (canary đã hoàn thành nhiệm vụ, được quality suite thay thế).
+  - Tự phát hiện + sửa 2 lỗi logic trong test TRƯỚC khi push: db_backup không thuộc nhánh gọi gate (bỏ khỏi test bypass), file >50MB tạo bằng seek là sparse file khiến du không đếm (sửa thành ghi zeros thật).
+- **Why / Tại sao:**
+  - User yêu cầu "môi trường thứ 2 song song + kiểm thử cực kỹ + code chuẩn chuyên gia" — kiến trúc đúng là: sandbox = bàn làm việc (có thể gian lận/có thể chết), GitHub = phòng giám định độc lập (không thể can thiệp). CI là lần rà soát thứ 2 không thể mua chuộc.
+  - Chính hệ thống kiểm tra phải được kiểm tra trước: nếu gate hỏng mà không ai biết thì cả 3 lớp là trang trí.
+- **Findings / Phát hiện:**
+  - Branch protection chỉ khả dụng cho public repo ở free tier — chuyển public giải quyết đồng thời: CI free vô hạn + protection free. Đã đánh đổi bảo mật: repo KHÔNG chứa secret nào (gate xác minh), protocol/docs/tools có thể công khai.
+  - Sparse file + du = bẫy test giả dương điển hình; ghi chú vào test để người sau không tái phạm.
+- **Next / Tiếp theo:**
+  1. Tự kiểm tra cục bộ (ruff + pytest) → push → `ci_status --wait` → xác minh 4 job xanh (kiểm chứng giả thuyết: CI limit chỉ áp dụng repo private).
+  2. Chốt chủ đề NCKH → EXP-001.
+
 ## [2026-10-16 21:00] Task ID: 3 — Kích hoạt CI + chẩn đoán CI bị chặn (thí nghiệm đối chứng)
 
 - **Did / Đã làm:**

@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 110
+exclude = ["skills", "upload", ".git", "node_modules", "data", "research"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+ignore_missing_imports = true
+# mypy sẽ siết chặt dần khi phần code nghiên cứu (scripts/) phát triển
