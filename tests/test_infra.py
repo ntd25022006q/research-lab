@@ -13,20 +13,27 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 
-# Danh sách BẮT BUỘC khớp với tools/gate.sh và .github/workflows/enforce.yml
+# Danh sách BẮT BUỘC khớp với tools/gate.sh mục 1 + .github/workflows/enforce.yml step 1
 MANDATORY = [
     "PROTOCOL.md",
     "CONTEXT_SNAPSHOT.md",
     "RESTORE.md",
     "worklog.md",
+    "README.md",
+    "pyproject.toml",
+    "tests/test_infra.py",
     "tools/checkpoint.sh",
     "tools/db_backup.sh",
     "tools/gate.sh",
+    "tools/ci_status.sh",
+    "tools/verify.sh",
+    "tools/new_experiment.sh",
     ".github/workflows/enforce.yml",
     ".github/workflows/quality.yml",
+    ".github/workflows/nightly.yml",
 ]
 
-PROTOCOL_SECTIONS = [f"## {i}." for i in range(13)]  # 0..12
+PROTOCOL_SECTIONS = [f"## {i}." for i in range(14)]  # 0..13
 
 
 def test_mandatory_files_exist():
@@ -52,12 +59,17 @@ def test_protocol_keeps_key_rules():
     assert "STARTUP SEQUENCE" in txt, "thiếu trình tự khởi động phiên"
     assert "LOCAL PASS" in txt, "thiếu kỷ luật CI-first (local pass ≠ done)"
     assert "force-push" in txt, "thiếu lệnh cấm force-push"
+    assert "Baseline" in txt, "thiếu điều 13 (trung thực khoa học: baseline bắt buộc)"
 
 
 def test_workflows_are_valid_yaml():
     import yaml  # noqa: PLC0415 — import cục bộ để môi trường không có pyyaml vẫn chạy test khác
 
-    for wf in [".github/workflows/enforce.yml", ".github/workflows/quality.yml"]:
+    for wf in [
+        ".github/workflows/enforce.yml",
+        ".github/workflows/quality.yml",
+        ".github/workflows/nightly.yml",
+    ]:
         data = yaml.safe_load((REPO / wf).read_text(encoding="utf-8"))
         assert "jobs" in data, f"{wf} không có jobs"
         for job_name, job in data["jobs"].items():
@@ -70,9 +82,57 @@ def test_gate_passes_on_the_real_repo():
 
 
 def test_shell_scripts_have_valid_syntax():
-    for f in ["tools/checkpoint.sh", "tools/db_backup.sh", "tools/gate.sh", "tools/ci_status.sh"]:
+    for f in [
+        "tools/checkpoint.sh",
+        "tools/db_backup.sh",
+        "tools/gate.sh",
+        "tools/ci_status.sh",
+        "tools/verify.sh",
+        "tools/new_experiment.sh",
+        "tools/hooks/pre-commit",
+        "tools/hooks/pre-push",
+    ]:
         r = subprocess.run(["bash", "-n", str(REPO / f)], capture_output=True, text=True)
         assert r.returncode == 0, f"{f} lỗi cú pháp bash:\n{r.stderr}"
+
+
+def test_nightly_workflow_has_hard_checks():
+    """Ca đêm phải quét secret full-history + kiểm tra dump DB còn phục hồi được."""
+    import yaml  # noqa: PLC0415
+
+    data = yaml.safe_load((REPO / ".github" / "workflows" / "nightly.yml").read_text(encoding="utf-8"))
+    # Bẫy YAML 1.1: key `on:` được parser hiểu là boolean True — phải tra cả hai
+    triggers = data.get("on", data.get(True, {}))
+    assert triggers.get("schedule"), "nightly phải có cron schedule"
+    raw = (REPO / ".github" / "workflows" / "nightly.yml").read_text(encoding="utf-8")
+    assert "gitleaks" in raw, "nightly thiếu gitleaks (quét secret full-history)"
+    assert "restore_check.db" in raw, "nightly thiếu test khôi phục DB dump"
+
+
+def test_new_experiment_scaffolds_preregistration(tmp_path):
+    """new_experiment.sh phải sinh file EXP đủ mục pre-register + từ chối ghi đè."""
+    tmp = Path(tmp_path)
+    (tmp / "tools").mkdir(parents=True)
+    shutil.copy(REPO / "tools" / "new_experiment.sh", tmp / "tools" / "new_experiment.sh")
+    r = subprocess.run(
+        ["bash", "tools/new_experiment.sh", "001", "baseline-demo", "42"],
+        cwd=tmp, capture_output=True, text=True, timeout=60,
+    )
+    assert r.returncode == 0, f"scaffold thất bại:\n{r.stdout}\n{r.stderr}"
+    exps = list((tmp / "research" / "experiments").glob("EXP-001-*.md"))
+    assert len(exps) == 1, "phải sinh đúng 1 file EXP-001"
+    txt = exps[0].read_text(encoding="utf-8")
+    for kw in ["## Question", "## Hypothesis", "## Method", "## Success criteria", "PRE-REGISTERED"]:
+        assert kw in txt, f"file EXP thiếu mục bắt buộc: {kw}"
+    env_file = tmp / "research" / "experiments" / "envs" / "EXP-001.env"
+    assert env_file.is_file(), "thiếu env freeze"
+    assert "SEED=42" in env_file.read_text(encoding="utf-8")
+    # Ghi đè phải bị từ chối — pre-register không được phá
+    r2 = subprocess.run(
+        ["bash", "tools/new_experiment.sh", "001", "baseline-demo", "42"],
+        cwd=tmp, capture_output=True, text=True, timeout=60,
+    )
+    assert r2.returncode != 0, "new_experiment KHÔNG được phép ghi đè file đã có"
 
 
 def _make_mini_lab(tmp: Path) -> Path:

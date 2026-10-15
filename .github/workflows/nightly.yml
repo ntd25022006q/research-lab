@@ -1,0 +1,59 @@
+name: nightly
+# KIỂM TOÁN SÂU ĐỊNH KỲ (môi trường thứ 2, ca đêm):
+# - Gitleaks quét secret trên TOÀN BỘ LỊCH SỬ git (không chỉ cây hiện tại) — secret lộ từ lâu
+#   vẫn bị lôi ra. Nếu bị lộ thật: thu hồi token NGAY + báo user (đừng cố giấu).
+# - Xác minh backup DB còn PHỤC HỒI ĐƯỢC — dump hỏng = checkpoint vô nghĩa.
+# - Cảnh báo worklog im lặng quá lâu.
+# Lịch: 01:30 UTC = 08:30 giờ Việt Nam hằng ngày.
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deep-audit:
+    name: deep-audit (gitleaks full-history + backup integrity)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks — quét secret toàn bộ lịch sử
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: DB dump phải còn phục hồi được
+        run: |
+          shopt -s nullglob
+          DUMPS=(data/db/*.sql)
+          if [ ${#DUMPS[@]} -eq 0 ]; then
+            echo "— chưa có dump SQL nào (chưa có DB) — bỏ qua"
+            exit 0
+          fi
+          for f in "${DUMPS[@]}"; do
+            rm -f /tmp/restore_check.db
+            if sqlite3 /tmp/restore_check.db < "$f"; then
+              N=$(sqlite3 /tmp/restore_check.db 'SELECT count(*) FROM sqlite_master;')
+              echo "✅ $f import OK ($N objects)"
+            else
+              echo "❌ $f KHÔNG import được — backup HỎNG, phải dump lại ngay (tools/db_backup.sh)!"
+              exit 1
+            fi
+          done
+
+      - name: Nhật ký im lặng quá lâu? (chỉ cảnh báo)
+        run: |
+          LAST=$(git log -1 --format=%ct -- worklog.md)
+          NOW=$(date +%s)
+          DAYS=$(( (NOW - LAST) / 86400 ))
+          if [ "$DAYS" -gt 14 ]; then
+            echo "⚠️ worklog im lặng ${DAYS} ngày — lab bỏ hoang hoặc quên checkpoint?"
+          else
+            echo "✅ worklog cập nhật ${DAYS} ngày trước — lab đang hoạt động"
+          fi

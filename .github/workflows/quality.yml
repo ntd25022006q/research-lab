@@ -22,7 +22,7 @@ jobs:
           ruff check .
       - name: Bash lint (shellcheck)
         run: |
-          shellcheck -S error tools/*.sh tools/hooks/pre-commit
+          shellcheck -S error tools/*.sh tools/hooks/pre-commit tools/hooks/pre-push
       - name: Workflow lint (actionlint)
         run: |
           curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash

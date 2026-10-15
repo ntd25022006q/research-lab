@@ -40,6 +40,8 @@ cd /home/z/my-project
    nếu chỉ có `dump.sql`: `sqlite3 data/db/app.db < data/db/dump.sql`.
    (Vị trí DB thực tế xem `.env` → `DATABASE_URL`.)
 5. Nếu dự án có Prisma/Node: `npm install` + `npx prisma generate` nếu cần.
+6. Xác minh máy móc enforcement còn nguyên: `bash tools/verify.sh` — phải ALL GREEN
+   (cảnh báo tool thiếu tại chỗ được phép, nhưng gate phải pass).
 
 ## Bước 4 — Báo user 1 câu ngắn
 

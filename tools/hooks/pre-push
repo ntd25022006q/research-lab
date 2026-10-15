@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# git pre-push hook — bản phản chiếu CI chạy tại chỗ TRƯỚC mỗi push (PROTOCOL §12).
+# Kích hoạt qua: git config core.hooksPath tools/hooks (checkpoint.sh tự cài).
+# - gate.sh = CỨNG: KHÔNG có đường skip.
+# - verify.sh = chất lượng: chỉ có thể hoãn bằng CHECKPOINT_SOFT_SKIP="<lý do>" —
+#   và CI trên GitHub vẫn chấm lại độc lập, dấu đỏ vĩnh viễn nếu lỡ dối.
+cat >/dev/null  # đọc hết stdin (refs của git push) — bắt buộc với pre-push hook
+
+bash "$(dirname "$0")/../gate.sh" || exit 1
+
+if bash "$(dirname "$0")/../verify.sh"; then
+  exit 0
+fi
+
+if [ -n "${CHECKPOINT_SOFT_SKIP:-}" ]; then
+  echo "[pre-push] ⚠️  PUSH RỦI RO được phép qua theo CHECKPOINT_SOFT_SKIP=\"$CHECKPOINT_SOFT_SKIP\""
+  echo "[pre-push] ⚠️  BẮT BUỘC ghi lý do này vào worklog.md ở milestone kế tiếp."
+  echo "[pre-push] ⚠️  CI trên GitHub vẫn sẽ chấm bài — nếu đỏ, §12 cấm làm việc mới."
+  exit 0
+fi
+
+echo "[pre-push] 🚫 verify thất bại — push bị CHẶN. Sửa lỗi rồi push lại."
+echo "[pre-push]    CHECKPOINT_SOFT_SKIP chỉ dành cho trường hợp bất khả kháng (ghi lý do vào worklog)."
+exit 1

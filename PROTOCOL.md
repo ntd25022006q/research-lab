@@ -137,9 +137,29 @@ thì luật được nạp lại nguyên vẹn mà không cần ai nhắc.
   trên máy agent KHÔNG THỂ can thiệp. Đây là "đồng nghiệp thứ hai không thể mua chuộc".
 - **Nguyên tắc vàng: LOCAL PASS ≠ DONE.** Một milestone chỉ DONE khi CI xanh cho commit đó:
   sau MỌI push, chạy `bash tools/ci_status.sh --wait` và đọc phán quyết.
+  Trước mỗi push chạy `bash tools/verify.sh` — bản phản chiếu CI tại chỗ: **CI không bao giờ
+  được thấy lỗi lần đầu.** (pre-push hook tự chạy verify; `CHECKPOINT_SOFT_SKIP` chỉ cho
+  bất khả kháng và PHẢI ghi lý do vào worklog.)
 - **CI đỏ = DỪNG MỌI VIỆC**: sửa lỗi, push lại, chờ xanh rồi mới làm việc mới.
   CẤM tiếp tục công việc mới trên nền CI đỏ (nợ kỹ thuật tích lũy = nghiên cứu không tin được).
 - **CẤM bypass kiểm tra**: `--no-verify`, force-push, sửa/tắt workflow để né check.
   Nếu một check bị cho là sai → chứng minh bằng dữ liệu trong worklog/issue, không phá kiểm tra.
 - **Code phải đạt chuẩn chuyên gia**: mọi script/thí nghiệm qua lint sạch, có test cho logic
   quan trọng, tái lập được (seed + phiên bản). Làm ẩu = vi phạm protocol, không phải "phong cách".
+
+## 13. SCIENTIFIC HONESTY — NOVELTY & BASELINES / TRUNG THỰC KHOA HỌC: TÍNH MỚI & ĐỐI CHỨNG
+
+Mục tiêu của lab là NCKH thành công THẬT, không phải kể chuyện hay. Vì vậy:
+
+- **Mọi tuyên bố "tốt hơn / đột phá / mới" PHẢI kèm đủ 3 thứ**, ghi trong file EXP tương ứng:
+  1. **Baseline định lượng**: số liệu của phương pháp đối chứng trên cùng dữ liệu, cùng seed,
+     cùng metric. Không có baseline = không có kết luận, chỉ có dư âm.
+  2. **Nguồn**: trích dẫn bài báo/repo gốc của baseline và của ý tưởng. Trước khi tuyên bố
+     "mới/đột phá", PHẢI tra trạng thái hiện có (web-search/web-reader) — đừng "phát minh lại"
+     thứ đã tồn tại rồi gọi là đột phá.
+  3. **Phạm vi hiệu lực**: kết quả đúng trên dataset/cấu hình nào — không khái quát vượt dữ liệu.
+- **Kết quả đẹp bất thường → nghi ngờ TRƯỚC khi tin**: kiểm tra data leakage, metric sai,
+  seed may mắn. Bắt buộc chạy lại ít nhất 1 seed khác trước khi ghi nhận là kết quả thật.
+- **CẤM tuyên bố không số liệu, không nguồn.** Kết quả âm cũng được ghi nhận đầy đủ —
+  thành công của lab đo bằng độ tin cậy + khả năng tái lập, không đo bằng độ màu mè.
+

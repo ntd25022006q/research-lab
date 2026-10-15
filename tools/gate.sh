@@ -6,10 +6,25 @@ cd "$(dirname "$0")/.."
 FAIL=0
 
 # ── 1. Tài liệu bắt buộc phải tồn tại (chống xóa luật) ──────────────────────
-for f in PROTOCOL.md CONTEXT_SNAPSHOT.md RESTORE.md worklog.md \
+# DANH SÁCH NÀY PHẢI KHỚP: tests/test_infra.py MANDATORY + enforce.yml step 1.
+for f in PROTOCOL.md CONTEXT_SNAPSHOT.md RESTORE.md worklog.md README.md \
+         pyproject.toml tests/test_infra.py \
          tools/checkpoint.sh tools/db_backup.sh tools/gate.sh tools/ci_status.sh \
-         .github/workflows/enforce.yml .github/workflows/quality.yml; do
+         tools/verify.sh tools/new_experiment.sh \
+         .github/workflows/enforce.yml .github/workflows/quality.yml .github/workflows/nightly.yml; do
   [ -f "$f" ] || { echo "[gate] ❌ THIẾU file bắt buộc: $f — LUẬT KHÔNG ĐƯỢC XÓA"; FAIL=1; }
+done
+
+# ── 1b. Hiến pháp không được cắt xén: đủ mục 0..13 ──────────────────────────
+for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
+  grep -qE "^## ${i}\." PROTOCOL.md 2>/dev/null \
+    || { echo "[gate] ❌ PROTOCOL.md thiếu mục ## ${i}. — CẤM cắt xén luật"; FAIL=1; }
+done
+
+# ── 1c. Worklog phải đúng mẫu (Did/Why/Findings/Next) ───────────────────────
+for kw in "Did /" "Why /" "Findings /" "Next /"; do
+  grep -q "$kw" worklog.md 2>/dev/null \
+    || { echo "[gate] ❌ worklog.md thiếu mục '$kw' — nhật ký phải theo mẫu, cấm tóm tắt sáo rỗng"; FAIL=1; }
 done
 
 # ── 2. .env không được vào repo (chống lộ biến môi trường) ──────────────────
@@ -45,6 +60,9 @@ fi
 
 # ── 5. Worklog phải tồn tại và có entry thật ────────────────────────────────
 grep -q "Task ID" worklog.md 2>/dev/null || { echo "[gate] ❌ worklog.md không có entry nào"; FAIL=1; }
+# Cấm nhân bản/sửa mất lịch sử: ít nhất 4 entry có dấu thời gian
+N_ENTRY=$(grep -c '^## \[' worklog.md 2>/dev/null || true)
+[ "${N_ENTRY:-0}" -ge 4 ] || { echo "[gate] ❌ worklog.md chỉ còn ${N_ENTRY} entry (<4) — lịch sử nhật ký KHÔNG được xóa bớt"; FAIL=1; }
 
 # ── Kết luận ────────────────────────────────────────────────────────────────
 if [ "$FAIL" -eq 0 ]; then

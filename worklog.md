@@ -14,6 +14,27 @@
 
 ---
 
+## [2026-10-16 04:20 +07] Task ID: 6 — Nâng cấp arsenal: verify.sh phản chiếu CI + pre-push hook + nightly audit + pre-register tool + PROTOCOL §13
+
+- **Did / Đã làm:**
+  - `tools/verify.sh` — bản phản chiếu CI chạy tại chỗ: gate → ruff → shellcheck → actionlint → pytest → bandit. Chính sách: tool chạy thấy lỗi = CHẶN; tool không cài được tại sandbox = cảnh báo lớn (CI trên GitHub chấm bù).
+  - `tools/hooks/pre-push` — gate (cứng, không skip) + verify trước mỗi push; lỗ thoát hiểm duy nhất `CHECKPOINT_SOFT_SKIP="<lý do>"` phải ghi worklog, và CI vẫn chấm lại độc lập.
+  - `tools/new_experiment.sh` — pre-register EXP-NNN: sinh file đủ Question/Hypothesis/Method/Success criteria + freeze môi trường (pip freeze + seed) vào `research/experiments/envs/`, TỪ CHỐI ghi đè file đã có (bản chất của pre-register).
+  - `.github/workflows/nightly.yml` — ca đêm 08:30 (+07) hằng ngày: gitleaks quét secret trên TOÀN BỘ lịch sử git + test dump DB còn import được (backup hỏng = checkpoint vô nghĩa) + cảnh báo worklog im lặng >14 ngày.
+  - Siết `gate.sh` + `enforce.yml`: danh sách file bắt buộc nâng lên 16 file (đồng bộ 3 nơi: gate / enforce / test MANDATORY); chống cắt xén PROTOCOL (phải đủ mục ## 0. → ## 13.); chống worklog sáo rỗng (bắt buộc Did/Why/Findings/Next + ≥4 entry, cấm xóa lịch sử).
+  - PROTOCOL thêm **§13 SCIENTIFIC HONESTY — NOVELTY & BASELINES**: mọi tuyên bố "đột phá/mới" bắt buộc có baseline định lượng + nguồn tra cứu + phạm vi hiệu lực; kết quả đẹp bất thường phải nghi trước (leakage/seed) và chạy lại seed khác; §12 bổ sung quy tắc verify-trước-push.
+  - `tests/test_infra.py` lên 15 test: thêm test nightly (cron + gitleaks + backup integrity), test new_experiment (scaffold + chống ghi đè), đồng bộ MANDATORY + sections 0..13; README thêm badge 3 workflow.
+- **Why / Tại sao:**
+  - User yêu cầu vũ khí hóa tối đa: "cái gì cũng quét qua GitHub, không chống đối, code chuẩn chuyên gia, thuật toán đột phá, NCKH thành công". Thiếu sót lớn nhất trước đó: agent có thể push code bẩn rồi mới thấy CI đỏ (CI biết trước agent) — `verify.sh` + pre-push đảo chiều đó: CI không bao giờ được thấy lỗi lần đầu.
+  - §13 giải quyết rủi ro lớn nhất của NCKH bằng AI: tự lừa mình bằng kết quả không có baseline/nguồn — đột phá chỉ đếm được khi đối chứng được.
+- **Findings / Phát hiện:**
+  - `verify.sh` bắt 2 lỗi thật ngay lần chạy đầu (trước cả push): (1) dòng test vượt 110 ký tự ruff E501; (2) bẫy YAML 1.1 — pyyaml parse key `on:` thành boolean `True` nên `data["on"]` KeyError, phải `data.get("on", data.get(True, {}))`. Ghi vào đây để người sau không tái phạm.
+  - shellcheck + actionlint không cài được trong sandbox (không sudo) — verify.sh xử lý đúng thiết kế: warn + chờ CI chấm.
+- **Next / Tiếp theo:**
+  1. `ci_status --wait` xác nhận xanh cho commit này (theo §12, milestone chỉ DONE khi CI xanh).
+  2. Chốt chủ đề NCKH với user → `bash tools/new_experiment.sh 001 "<slug>" <seed>` → EXP-001.
+  3. Sáng mai kiểm tra run `nightly` đầu tiên (gitleaks + backup integrity).
+
 ## [2026-10-16 20:45] Task ID: 2 — Nối GitHub + lắp 3 lớp khóa cứng (enforcement)
 
 - **Did / Đã làm:**

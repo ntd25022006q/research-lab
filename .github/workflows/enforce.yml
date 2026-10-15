@@ -15,10 +15,28 @@ jobs:
 
       - name: Mandatory files must exist (anti-rule-deletion)
         run: |
-          for f in PROTOCOL.md CONTEXT_SNAPSHOT.md RESTORE.md worklog.md tools/checkpoint.sh tools/db_backup.sh tools/gate.sh .github/workflows/enforce.yml .github/workflows/quality.yml; do
+          # PHẢI KHỚP: tools/gate.sh mục 1 + tests/test_infra.py MANDATORY
+          for f in PROTOCOL.md CONTEXT_SNAPSHOT.md RESTORE.md worklog.md README.md pyproject.toml tests/test_infra.py tools/checkpoint.sh tools/db_backup.sh tools/gate.sh tools/ci_status.sh tools/verify.sh tools/new_experiment.sh .github/workflows/enforce.yml .github/workflows/quality.yml .github/workflows/nightly.yml; do
             [ -f "$f" ] || { echo "❌ MISSING: $f — rules deleted. NOT ALLOWED."; exit 1; }
           done
           echo "✅ all mandatory files present"
+
+      - name: PROTOCOL.md must keep all sections (anti-rule-deletion)
+        run: |
+          for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
+            grep -qE "^## ${i}\." PROTOCOL.md || { echo "❌ PROTOCOL.md missing section ## ${i}. — law was tampered"; exit 1; }
+          done
+          echo "✅ protocol sections 0-13 intact"
+
+      - name: worklog must follow the template (anti-empty-log)
+        run: |
+          grep -q "Task ID" worklog.md || { echo "❌ worklog has no entries"; exit 1; }
+          for kw in "Did /" "Why /" "Findings /" "Next /"; do
+            grep -q "$kw" worklog.md || { echo "❌ worklog missing '$kw' — template violated"; exit 1; }
+          done
+          N=$(grep -c '^## \[' worklog.md || true)
+          [ "$N" -ge 4 ] || { echo "❌ worklog history truncated ($N entries < 4)"; exit 1; }
+          echo "✅ worklog template ok ($N entries)"
 
       - name: .env must NOT be tracked
         run: |
