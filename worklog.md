@@ -34,6 +34,26 @@
   2. Bật branch protection (no force-push, no delete) qua API.
   3. User chốt chủ đề NCKH → mở EXP-001.
 
+## [2026-10-16 21:00] Task ID: 3 — Kích hoạt CI + chẩn đoán CI bị chặn (thí nghiệm đối chứng)
+
+- **Did / Đã làm:**
+  - Push enforcement commit `d06c49a` → CI `enforce` báo **failure** ngay lập tức.
+  - Truy vết 4 tầng: (1) check-run annotations trống; (2) log cấp run + job → rỗng/BlobNotFound; (3) job chết sau 2 giây với `steps: []` — runner chưa hề chạy; (4) tái hiện 4 check cục bộ trên cây `d06c49a` → tất cả PASS.
+  - **Thí nghiệm đối chứng (EXP: ci-probe):** tạo `.github/workflows/minimal-test.yml` chỉ có `echo` → push (`2fde992`) + `workflow_dispatch` → **cả 3 run đều failure y hệt** (2s, 0 bước, 0 log).
+  - Tạo tag `infra-v1` ghim mốc infrastructure (thay thế branch protection không khả dụng — private repo cần GitHub Pro).
+  - Gate Layer 1 xác nhận hoạt động THẬT: nó đã chặn 1 lần push khi thấy `.env` bị track → sửa `git rm --cached .env` rồi push lại OK.
+- **Why / Tại sao:**
+  - Workflow tối giản `echo` cũng chết như nhau ⇒ loại trừ giả thuyết "YAML của tôi sai" ⇒ nguyên nhân nằm ở cấp tài khoản/repo. Triệu chứng (chết ngay, 0 bước, 0 log) khớp chuẩn với Actions bị chặn do **billing/spending limit hoặc kiểm duyệt tài khoản mới** trên repo private.
+- **Findings / Phát hiện:**
+  - CI (Layer 2) hiện KHÔNG hoạt động — lỗi ở cấp tài khoản GitHub của user, không phải code enforcement.
+  - Branch protection (Layer 3 đầy đủ) cần GitHub Pro cho repo private → dùng tag `infra-v1` ghim mốc làm phương án tạm, PROTOCOL vẫn cấm force-push bằng luật.
+  - Layer 1 (gate.sh) đã được chứng minh hoạt động thật bằng trường hợp chặn `.env`.
+- **Next / Tiếp theo:**
+  1. User kiểm tra `github.com/settings/billing` + mở tab Actions của repo xem banner lỗi chính xác (spending limit / verify account).
+  2. Khi CI sống lại: `minimal-test` phải xanh trước, `enforce` xanh sau (canary test).
+  3. Nếu không muốn sửa billing: chọn 1 — repo public (CI + branch protection free) hoặc chấp nhận chỉ có Layer 1.
+  4. Chốt chủ đề NCKH → EXP-001.
+
 ## [2026-10-16 20:20] Task ID: 1 — Chẩn đoán môi trường + dựng khung phòng lab số (persistence infrastructure)
 
 - **Did / Đã làm:**

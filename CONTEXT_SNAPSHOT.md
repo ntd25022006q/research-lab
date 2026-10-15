@@ -5,9 +5,9 @@
 
 ---
 
-- **Last updated / Cập nhật:** 2026-10-16 20:45
-- **Commit / Mã commit:** `29fe386` (bootstrap) — enforcement commit xem `git log`
-- **Phase / Giai đoạn:** 🟢 INFRASTRUCTURE COMPLETE — repo đã nối GitHub + 3 lớp khóa cứng hoạt động
+- **Last updated / Cập nhật:** 2026-10-16 21:00
+- **Commit / Mã commit:** `2fde992` (ci-probe) — bootstrap `29fe386`, enforcement `d06c49a`, tag `infra-v1`
+- **Phase / Giai đoạn:** 🟢 INFRASTRUCTURE COMPLETE — repo nối GitHub + gate hoạt động; 🟡 CI bị chặn cấp tài khoản (xem Gotchas)
 
 ## 1. MISSION / SỨC MỆNH
 
@@ -57,6 +57,8 @@
 
 - **Sau reset, remote URL (chứa PAT) cũng mất** → agent mới phải xin PAT lại từ user; đừng tìm kiếm nó trong repo (gate + CI chặn cứng — pattern PAT trong file làm CI đỏ).
 - **PAT user đang dùng là CLASSIC quyền admin toàn phần** (`admin:org`, `delete_repo`...) — vượt needs; đã khuyến cáo user thu hồi + thay fine-grained sau khi setup ổn định. Nếu token cũ bị thu hồi mà user chưa đưa token mới: xin lại, đừng đoán.
+- **CI (Layer 2) đang bị chặn cấp tài khoản**: cả workflow `echo` tối giản cũng fail 2s/0 bước/0 log → billing/spending-limit hoặc kiểm duyệt tài khoản trên repo private. Trạng thái chi tiết: worklog entry Task ID 3. ĐỪNG mất thời gian debug YAML — YAML đã được chứng minh đúng.
+- **Branch protection full cần GitHub Pro** cho repo private — thay tạm bằng tag milestone (`infra-v1`).
 - `skills/`, `upload/`, `.env` bị gitignore cố ý — đừng "sửa" .gitignore để đưa chúng vào repo.
 - `download/` (nơi user tải file) KHÁC với `download-exports/` (trong repo). Deliverable cuối cần nằm ở cả hai: copy từ `download-exports/` → `download/`.
 - Nhánh mặc định là `main` (đã xác minh) — đừng tạo nhánh khác khi push thông thường.
