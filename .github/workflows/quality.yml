@@ -53,5 +53,6 @@ jobs:
         run: |
           pip install -q bandit
           # -ll: chỉ fail ở mức MEDIUM trở lên (LOW là nhiễu trong test harness)
+          # LƯU Ý: -v (verbose) xung đột -q (quiet) — từng khiến job đỏ exit 123
           find . -name '*.py' -not -path './skills/*' -not -path './node_modules/*' -print0 \
-            | xargs -0 -r bandit -q -ll -v
+            | xargs -0 -r bandit -q -ll

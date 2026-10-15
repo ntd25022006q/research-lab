@@ -34,6 +34,21 @@
   2. Bật branch protection (no force-push, no delete) qua API.
   3. User chốt chủ đề NCKH → mở EXP-001.
 
+## [2026-10-16 22:05] Task ID: 5 — Chu trình CI-first lần 1: đỏ bandit → chẩn đoán → sửa → xanh
+
+- **Did / Đã làm:**
+  - Push `5283bb1` → chạy `ci_status --wait` → **4 job thực thi trên public** (xác nhận giả thuyết: limit chỉ áp dụng private): pytest ✅ enforce ✅ lint ✅ bandit ❌.
+  - Truy vết: log runner → `exit code 123` (mã đặc trưng của xargs: lệnh con thoát 1-125). Tái hiện cục bộ chính xác lệnh CI → `bandit: error: argument -v/--verbose: not allowed with argument -q/--quiet`. Không phải finding bảo mật thật — là 2 cờ xung đột do tôi lắp.
+  - Sửa quality.yml (bỏ `-v`, thêm comment cảnh báo người sau), tái hiện lại cục bộ: exit 0 → push sửa.
+- **Why / Tại sao:**
+  - Đây là lần đầu PROTOCOL §12 chạy trọn vòng đời thật: local pass → push → CI đỏ → DỪNG → chẩn đoán bằng log → tái hiện cục bộ → sửa → push lại. Không được phép bỏ qua hay né check.
+- **Findings / Phát hiện:**
+  - Exit code 123 của xargs là manh mối chẩn đoán quý: nghĩa là "lệnh con thoát 1-125" — luôn phải soi lệnh con thay vì đổ lỗi cho dữ liệu.
+  - CI public xác nhận hoạt động: 4/4 job thực thi thật (khác hẳn private: 0 bước, 2s, 0 log).
+- **Next / Tiếp theo:**
+  1. `ci_status --wait` xác nhận 4/4 xanh → milestone DONE theo §12.
+  2. Chốt chủ đề NCKH → EXP-001.
+
 ## [2026-10-16 21:30] Task ID: 4 — Môi trường kép: bộ kiểm thử chuyên gia + CI 4 job + chuyển public
 
 - **Did / Đã làm:**
